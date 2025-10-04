@@ -1,71 +1,56 @@
-# Asymmetric solution for dining-philosopher problem
 from threading import *
-import random
 import time
 
-#inheriting threading class in Thread module
-class Philosopher(Thread):
-    running = True  #used to check if everyone is finished eating
+class BankAccount():
+  def __init__(self, name, balance):
+    self.name = name
+    self.balance = balance
 
- #Since the subclass overrides the constructor, it must make sure to invoke the base class constructor (Thread.__init__()) before doing anything else to the thread.
-    def __init__(self, index, forkOnLeft, forkOnRight):
-        Thread.__init__(self)
-        self.index = index
+  def __str__(self):
+    return self.name
 
-        if self.index % 2 == 0:
-          fork1, fork2 = self.forkOnRight, self.forkOnLeft
-        else:
-          fork2, fork1 = self.forkOnRight, self.forkOnLeft
+# These accounts are our shared resources
+account1 = BankAccount("account1", 100)
+account2 = BankAccount("account2", 0)
+l = Lock() # creating the lock object
 
-        self.forkOnLeft = forkOnLeft
-        self.forkOnRight = forkOnRight
+class BankTransferThread(Thread):
+  def __init__(self, sender, receiver, amount):
+    Thread.__init__(self)
+    self.sender = sender
+    self.receiver = receiver
+    self.amount = amount
 
-    def run(self):
-        while(self.running):
-            # Philosopher is thinking (but really is sleeping).
-            time.sleep()
-            print ('Philosopher %s is hungry.' % self.index)
-            self.dine()
+  def run(self):
+    # Adding Lock to fix the Race Condition
+    l.acquire()
+    sender_initial_balance = self.sender.balance
+    sender_initial_balance -= self.amount
+    # Inserting delay to allow switch between threads
+    time.sleep(0.001)
+    
+    self.sender.balance = sender_initial_balance
 
-    def dine(self):
-        # if both the semaphores(forks) are free, then philosopher will eat
-        if self.index % 2 == 0:
-          fork1, fork2 = self.forkOnRight, self.forkOnLeft
-          print ('Even Philosopher %s swaps Right forks.' % self.index)
-        else:
-          fork2, fork1 = self.forkOnRight, self.forkOnLeft
-          print ('Odd Philosopher %s swaps Left forks.' % self.index)
-        if self.running:
-          while True:
-              fork1.acquire() # wait operation on left fork
-              locked = fork2.acquire(False) # non-blocking wait call
-              if locked: break #if right fork is not available leave left fork
-              fork1.release()
-        else:
-            return
-        self.dining()
-        #release both the fork after dining
-        fork2.release()
-        fork1.release()
-
-    def dining(self):
-        print ('Philosopher %s starts eating. '% self.index)
-        time.sleep(30)
-        print ('Philosopher %s finishes eating and leaves to think.' % self.index)
-
-def main():
-    forks = [Semaphore() for n in range(5)] #initialising array of semaphore i.e forks
-
-    #here (i+1)%5 is used to get right and left forks circularly between 1-5
-    philosophers= [Philosopher(i, forks[i%5], forks[(i+1)%5])
-            for i in range(0,5,2)]
-
-    Philosopher.running = True
-    for p in philosophers: p.start()
-    time.sleep(100)
-    Philosopher.running = False
-    print ("Now we're finishing.")
-
+    receiver_initial_balance = self.receiver.balance
+    receiver_initial_balance += self.amount
+    
+    # Inserting delay to allow switch between threads
+    time.sleep(0.001)
+    self.receiver.balance = receiver_initial_balance
+    l.release()
 
 if __name__ == "__main__":
-    main()
+
+  threads = []
+
+  for i in range(100):
+    threads.append(BankTransferThread(account1, account2, 1))
+
+  for thread in threads:
+    thread.start()
+
+  for thread in threads:
+    thread.join()
+
+  print('account1 ', account1.balance)
+  print('account2 ', account2.balance)
