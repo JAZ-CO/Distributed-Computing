@@ -1,32 +1,14 @@
-from threading import *
-import time
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Nov 16 20:12:23 2018
 
-s = Semaphore(2) # creating the semaphore object initialized with 2 threads allowed to access simultaneously.
-l = Lock()
-# create a lock object here
+@author: DR.AYAZ
+"""
 
-def wish(name,age):
-   s.acquire()  # acquire sempahore instance by the current thread
-   for i in range(3):
-       # acquire the lock here
-       l.acquire()
-       print("Hi",name)
-       time.sleep(2)
-       print("Your age is",age)
-       # release the lock here
-       l.release()
-   s.release() # release semaphore instance by the current thread
+from mpi4py import MPI
 
-t1=Thread(target=wish, args=("Abullah",15))
-t2=Thread(target=wish, args=("Muhammad",20))
-t3=Thread(target=wish, args=("Abubaker",25))
-t4=Thread(target=wish, args=("Omar",30))
-
-t1.start()
-t2.start()
-t3.start()
-t4.start()
-t1.join()
-t2.join()
-t3.join()
-t4.join()
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank() # MPI.COMM_WORLD.Get_rank(): process id within the MPI communicator starting from 0,1,2,3.......
+size = comm.Get_size() # Number of Processes in the MPI communicator
+print('My rank is ',rank)
+print('Number of Processes = ', size)
