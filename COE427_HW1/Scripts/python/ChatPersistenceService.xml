@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dds>
+
+  <!-- QoS used by Persistence Service itself -->
+  <qos_library name="ChatPersistenceQosLib">
+    <qos_profile name="ChatPersistenceProfile">
+
+      <!-- QoS for PRST DataWriter (what replays data) -->
+      <datawriter_qos>
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_ALL_HISTORY_QOS</kind>
+        </history>
+        <durability>
+          <!-- must match TRANSIENT/PERSISTENT topics we want to persist -->
+          <kind>TRANSIENT_DURABILITY_QOS</kind>
+        </durability>
+      </datawriter_qos>
+
+      <!-- QoS for PRST DataReader (what listens to your app) -->
+      <datareader_qos>
+        <reliability>
+          <kind>RELIABLE_RELIABILITY_QOS</kind>
+        </reliability>
+        <history>
+          <kind>KEEP_ALL_HISTORY_QOS</kind>
+        </history>
+        <durability>
+          <kind>TRANSIENT_DURABILITY_QOS</kind>
+        </durability>
+      </datareader_qos>
+
+      <!-- IMPORTANT: see all partitions (*) so it can see "general", etc. -->
+      <publisher_qos>
+        <partition>
+          <name>
+            <element>*</element>
+          </name>
+        </partition>
+      </publisher_qos>
+
+      <subscriber_qos>
+        <partition>
+          <name>
+            <element>*</element>
+          </name>
+        </partition>
+      </subscriber_qos>
+
+    </qos_profile>
+  </qos_library>
+
+  <!-- Persistence Service configuration -->
+  <persistence_service name="ChatPersistenceService">
+
+    <!-- TRANSIENT mode (memory only) because we don't use <persistent_storage> -->
+    <!-- Add <persistent_storage> if you later want disk-based PERSISTENT history -->
+
+    <participant name="ChatPSParticipant">
+      <domain_id>0</domain_id>
+
+      <persistence_group name="PersistAll" filter="*">
+        <use_durability_service>false</use_durability_service>
+        <single_publisher>true</single_publisher>
+        <single_subscriber>true</single_subscriber>
+
+        <!-- Use the QoS we defined above (library::profile) -->
+        <datawriter_qos  base_name="ChatPersistenceQosLib::ChatPersistenceProfile"/>
+        <datareader_qos  base_name="ChatPersistenceQosLib::ChatPersistenceProfile"/>
+        <publisher_qos   base_name="ChatPersistenceQosLib::ChatPersistenceProfile"/>
+        <subscriber_qos  base_name="ChatPersistenceQosLib::ChatPersistenceProfile"/>
+      </persistence_group>
+    </participant>
+  </persistence_service>
+</dds>
